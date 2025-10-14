@@ -181,5 +181,48 @@ smooth/violin+
 ggsave("p8105_hw1p2_Combine.pdf")
 ```
 
+
 ##Problem 3
+```{r}
+library(janitor)
+covar = 
+  read_csv("nhanes_covar.csv", skip=4) |> 
+  janitor::clean_names() |> 
+  filter (age >=21) |> 
+  mutate(
+    sex = factor(sex, 
+                 levels = c(1, 2), 
+                 labels = c("Male", "Female")),
+    education = factor(education,
+      levels = c(1, 2, 3),
+      labels = c("Less than high school",
+                 "High school equivalent",
+                 "More than high school")),
+    seqn=as.integer (seqn),
+      ordered = TRUE) |> 
+  drop_na(sex,age,bmi,education)
+accel=
+   read_csv("nhanes_accel.csv") |>
+  janitor::clean_names()
+nhanes=
+  left_join(covar,accel, by="seqn")
+```
+
+```{r}
+nhanes |>
+  group_by(education, sex) |>
+  summarize(obs = n()) |> 
+  pivot_wider(
+    names_from = sex,
+    values_from = obs) |>  
+  knitr::kable()
+
+nhanes |>
+  ggplot(aes(x=education, y=age,color=sex))+
+  geom_boxplot()+
+  labs(title="age distributions for men and women in each education category",
+       x="education",
+       y="age")
+
+```
 

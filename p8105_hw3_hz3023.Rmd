@@ -9,22 +9,65 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Prepare
+```{r}
+library(ggridges)
+library(tidyverse)
+```
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
+## Problem 1
 ```{r cars}
-summary(cars)
+
+library(p8105.datasets)
+data("instacart")
+view("instacart") 
+```
+In this dataset, there are `r nrow(instacart)` observations and `r ncol(instacart)` variables. Key variable include the order id, product id, reordered times, user id and order number and others.
+
+```{r}
+instacart |>
+  group_by(aisle) |>
+  summarize(
+    items = n()) |>
+  mutate(
+    aisle_ranking = min_rank(items)) |> 
+  arrange(aisle_ranking)
+```
+There are 143 aisles in the data set. The most items ordered from fresh vegetables aisles.
+
+Below is a bar polt show the number orderd in each aisle.
+```{r}
+instacart |>
+  group_by(aisle) |>
+  summarize(items = n()) |>
+  filter(items > 10000) |>
+ggplot(aes(x = aisle, y = items)) +
+  geom_col()+
+    coord_flip()
+ggsave("p8105_hw1p1_barpolt.pdf")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+instacart |>
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
+  group_by(aisle, product_name) |>
+  summarize(orders = n()) |> 
+  knitr::kable()
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+instacart |>
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
+  group_by(product_name, order_dow) |>
+  summarize(mean_hour = mean(order_hour_of_day)) |>
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour) |>
+  knitr::kable(digits = 1)
+```
+
+## Problem 2
+```{r}
+
+```
+

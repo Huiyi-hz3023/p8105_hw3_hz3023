@@ -52,6 +52,9 @@ instacart |>
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) |>
   group_by(aisle, product_name) |>
   summarize(orders = n()) |> 
+  arrange(aisle, desc(orders)) |>
+  group_by(aisle) |>
+  slice_head(n = 3) |>
   knitr::kable()
 ```
 
@@ -105,20 +108,28 @@ nyc_price_df =
 ```
 
 ```{r}
-Q2 = 
+Q2=
   nyc_price_df |> 
+  filter(month >= as.Date("2015-01-01"), month <= as.Date("2024-08-31")) |> 
   group_by(zip_code) |> 
-  summarize(months = n())
-nrow(filter(Q2, months == 116))
-nrow(filter(Q2, months < 10))
+  summarize(n_months = sum(!is.na(price))) |> 
+  summarize(
+    all = sum(n_months == 116),
+    less10 = sum(n_months < 10)
+  )
+
 ```
-There are `r nrow(filter(Q2, months == 116))` codes are observed in all 116 months.There are `r nrow(filter(Q2, months < 10))` codes are observed fewer than 10 times.
+There are `r Q2$all` codes are observed in all 116 months.There are `r Q2$less10` codes are observed fewer than 10 times.
 
 ```{r}
-  nyc_price_df |>
+nyc_price_df |>
   group_by(borough, year) |>
   summarize(avg_rental_price = mean(price, na.rm = TRUE)) |>
-  arrange(borough, year) |> 
+  pivot_wider(
+    names_from = year,
+    values_from = avg_rental_price
+  ) |>
+  arrange(borough) |>
   knitr::kable()
 ```
 According to the table, the average rental price in each borough increase every year.
@@ -170,4 +181,5 @@ smooth/violin+
 ggsave("p8105_hw1p2_Combine.pdf")
 ```
 
+##Problem 3
 

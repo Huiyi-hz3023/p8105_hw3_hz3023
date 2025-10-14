@@ -68,6 +68,106 @@ instacart |>
 
 ## Problem 2
 ```{r}
+nyc_zillow_df = 
+  read_csv("./zillow_data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv") |> 
+  pivot_longer(
+    -(RegionID:CountyName),
+    names_to = "month",
+    values_to = "price") |> 
+  janitor::clean_names() |> 
+  rename(zip_code = region_name) |> 
+  mutate(
+    month = as_date(month),
+    year = floor_date(month, unit = "year"),
+    zip_code = as.numeric(zip_code)) |> 
+  select(-county_name)
+
+zip_codes_df = 
+  read_csv("./zillow_data/Zip Codes.csv") |> 
+  janitor::clean_names() |> 
+  filter(
+    !(zip_code == 10463 & county == "New York"),
+    !(zip_code == 11201 & county == "New York"))  |> 
+  mutate(
+    borough = case_match(
+      county,
+      "Bronx" ~ "Bronx",
+      "Kings" ~ "Brooklyn",
+      "New York" ~ "Manhattan",
+      "Queens" ~ "Queens",
+      "Richmond" ~ "Staten Island"
+    )
+  ) |> 
+  select(zip_code, borough, neighborhood)
+
+nyc_price_df = 
+  left_join(nyc_zillow_df, zip_codes_df, by = "zip_code")
+```
+
+```{r}
+Q2 = 
+  nyc_price_df |> 
+  group_by(zip_code) |> 
+  summarize(months = n())
+nrow(filter(Q2, months == 116))
+nrow(filter(Q2, months < 10))
+```
+There are `r nrow(filter(Q2, months == 116))` codes are observed in all 116 months.There are `r nrow(filter(Q2, months < 10))` codes are observed fewer than 10 times.
+
+```{r}
+  nyc_price_df |>
+  group_by(borough, year) |>
+  summarize(avg_rental_price = mean(price, na.rm = TRUE)) |>
+  arrange(borough, year) |> 
+  knitr::kable()
+```
+According to the table, the average rental price in each borough increase every year.
+
+```{r}
+smooth=
+nyc_price_df |>
+  ggplot(aes(x = year, y = price, color = borough)) +
+  geom_smooth()+
+   labs(
+    title = "NYC Rental Prices (2015–2024)",
+    x = "Year",
+    y = "Average Rental Price",
+    caption = "Data from zillow",
+    color = "Borough"
+  ) +
+  theme(legend.position="bottom")
 
 ```
+The polt shows that there is a increase trend in rental prices in all boroughs from 2015 to 2024 in NYC. Manhattan have the hightest price and Bronx have the lowest price over the year.
+
+```{r}
+violin=
+nyc_price_df |>
+  filter(year == "2023-01-01") |>
+  group_by(borough, zip_code) |>
+  summarize(mean_price = mean(price, na.rm = TRUE)) |>
+  ggplot(aes(x = borough, y = mean_price)) +
+  geom_violin(aes(fill = borough), alpha=.5) +
+  stat_summary(fun="mean",color="blue")
+  labs(
+    title = "Average Rental Price within ZIP Code in 2023",
+    x = "Borough",
+    y = "Average Rental Price"
+  ) +
+ theme(legend.position="bottom")
+
+```
+Like the last polt, Manhattan have the highest average rents in NYC, however, it also have the widest range.Staten Island have the narrowest range in NYC.
+
+```{r}
+library(patchwork)
+smooth/violin+
+  labs(
+    title = "Average Rental Price within ZIP Code in 2023",
+    x = "Borough",
+    y = "Average Rental Price"
+  )
+ggsave("p8105_hw1p2_Combine.pdf")
+```
+
 

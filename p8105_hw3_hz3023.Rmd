@@ -10,18 +10,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Prepare
+
 ```{r}
 library(ggridges)
 library(tidyverse)
 ```
 
 ## Problem 1
+
 ```{r cars}
 
 library(p8105.datasets)
 data("instacart")
 view("instacart") 
 ```
+
 In this dataset, there are `r nrow(instacart)` observations and `r ncol(instacart)` variables. Key variable include the order id, product id, reordered times, user id and order number and others.
 
 ```{r}
@@ -33,9 +36,11 @@ instacart |>
     aisle_ranking = min_rank(items)) |> 
   arrange(aisle_ranking)
 ```
+
 There are 143 aisles in the data set. The most items ordered from fresh vegetables aisles.
 
 Below is a bar polt show the number orderd in each aisle.
+
 ```{r}
 instacart |>
   group_by(aisle) |>
@@ -70,6 +75,7 @@ instacart |>
 ```
 
 ## Problem 2
+
 ```{r}
 nyc_zillow_df = 
   read_csv("./zillow_data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv") |> 
@@ -119,6 +125,7 @@ Q2=
   )
 
 ```
+
 There are `r Q2$all` codes are observed in all 116 months.There are `r Q2$less10` codes are observed fewer than 10 times.
 
 ```{r}
@@ -132,6 +139,7 @@ nyc_price_df |>
   arrange(borough) |>
   knitr::kable()
 ```
+
 According to the table, the average rental price in each borough increase every year.
 
 ```{r}
@@ -149,6 +157,7 @@ nyc_price_df |>
   theme(legend.position="bottom")
 
 ```
+
 The polt shows that there is a increase trend in rental prices in all boroughs from 2015 to 2024 in NYC. Manhattan have the hightest price and Bronx have the lowest price over the year.
 
 ```{r}
@@ -168,6 +177,7 @@ nyc_price_df |>
  theme(legend.position="bottom")
 
 ```
+
 Like the last polt, Manhattan have the highest average rents in NYC, however, it also have the widest range.Staten Island have the narrowest range in NYC.
 
 ```{r}
@@ -181,8 +191,8 @@ smooth/violin+
 ggsave("p8105_hw1p2_Combine.pdf")
 ```
 
-
 ##Problem 3
+
 ```{r}
 library(janitor)
 covar = 
@@ -226,3 +236,47 @@ nhanes |>
 
 ```
 
+The table shows that most people in this group have more than high school education. Other than female on the high school equivalent group, most young people trend to have a higher degree.
+
+
+```{r}
+nhanes |>
+  mutate(totalactivity = rowSums(across(starts_with("min")), na.rm = TRUE)) |>
+  group_by(totalactivity, seqn, sex, education, age) |>
+  ggplot(aes(x = age, y = totalactivity, color = sex)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  facet_grid(.~education) +
+  labs(title = "Total Daily Activity and Age in different Sex",
+    x = "Age",
+    y = "Total Activity",
+    color = "Sex") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+Plots shows that the total activity decreases with age in all education levels. However, in higher education level, the decline is relatively slow. This happens because compare with lower education levels groups, people who have more than high school education have a lower total activity rate. People with a higher level of education tend to avoid jobs that mainly involve physical labor.
+
+
+```{r}
+nhanes |>
+  pivot_longer(min1:min1440,
+    names_to   = "time",
+    names_prefix = "min",    
+    values_to  = "activity") |>
+  mutate(
+    minute = as.integer(time), 
+    hour   = minute / 60) |>
+  group_by(hour, education, sex) |> 
+  summarize(mean_activity = mean(activity, na.rm = TRUE)) |>
+  ggplot(aes(x = hour, y = mean_activity, color = sex)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  facet_grid(.~ education) +
+  labs(title = "24-hour activity and Education in different Sex",
+       x = "Hour", y = "Mean Activity", color = "Sex") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+The pattern for activity hour have the same trend in both sex and all education level over all. People activity start at 5am and peak around 10. Overall, men have more activity than women. Like last plot, people who are less than high school level have the highest mean activity, because of the type of job.
